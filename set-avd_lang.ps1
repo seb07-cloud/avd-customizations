@@ -7,6 +7,10 @@ $ISO_inbox = "https://software-download.microsoft.com/download/sg/19041.928.2104
 [string]$down_path = "C:\temp\"
 [string]$language = "de-de"
 
+if (!Test-Path $down_path) {
+    New-Item -Path $down_path -ItemType Directory -Force
+}
+
 ########################################################
 ## Add Languages to running Windows Image for Capture ##
 ########################################################
@@ -17,6 +21,7 @@ $WebClient.DownloadFile($ISO_oemmulti, "$down_path + $(($ISO_oemmulti -split "/"
 $WebClient.DownloadFile($ISO_fod, "$down_path + $(($ISO_fod -split "/")[(($ISO_fod -split "/").length - 1)])")
 $WebClient.DownloadFile($ISO_inbox, "$down_path + $(($ISO_inbox -split "/")[(($ISO_inbox -split "/").length - 1)])")
 
+##Mount ISO´s##
 $drives = foreach ($item in Get-ChildItem -Path $down_path -Filter "*.iso") {
     Mount-DiskImage -ImagePath $item.FullName
 }
@@ -25,14 +30,7 @@ $vol_LPLIP = (($drives | Get-Volume) | Where-Object { $_.FileSystemLabel -match 
 $vol_FOD = (($drives | Get-Volume) | Where-Object { $_.FileSystemLabel -match "FOD" }).DriveLetter
 $vol_CDL = (($drives | Get-Volume) | Where-Object { $_.FileSystemLabel -match "CDL" }).DriveLetter
 
-
-$LPLIP_langpack = Get-ChildItem $($vol_LPLIP + ":\x64\langpacks") | Where-Object { $_.Name -match "de-de" }
-$LPLIP_langexppack = Get-ChildItem $($vol_LPLIP + ":\LocalExperiencePack\" + "$language") | Where-Object { $_.Name -match "de-DE" }
-$LPLIP_licence = Get-ChildItem $($vol_LPLIP + ":\LocalExperiencePack\" + $language) | Where-Object { $_.Name -match "License" }
-
-
-
-
+##Install Lang Features // Set Language##
 foreach ($vol in ($drives | Get-Volume)) {
     if ($vol.FileSystemLabel -match "LPLIP") {
 
