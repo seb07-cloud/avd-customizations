@@ -23,6 +23,7 @@ $drives = foreach ($item in Get-ChildItem -Path $down_path -Filter "*.iso") {
 
 $vol_LPLIP = (($drives | Get-Volume) | Where-Object { $_.FileSystemLabel -match "LPLIP" }).DriveLetter
 $vol_FOD = (($drives | Get-Volume) | Where-Object { $_.FileSystemLabel -match "FOD" }).DriveLetter
+$vol_CDL = (($drives | Get-Volume) | Where-Object { $_.FileSystemLabel -match "CDL" }).DriveLetter
 
 
 $LPLIP_langpack = Get-ChildItem $($vol_LPLIP + ":\x64\langpacks") | Where-Object { $_.Name -match "de-de" }
@@ -70,9 +71,7 @@ Disable-ScheduledTask -TaskPath "\Microsoft\Windows\AppxDeploymentClient\" -Task
 #########################################
 
 ##Set Inbox App Package Content Stores##
-if ($vol.FileSystemLabel -match "CDL") {
-    [string]$AppsContent = $vol.DriveLetter + ":" + "\amd64fre"
-}
+[string]$AppsContent = $vol_CDL + ":" + "\amd64fre"
 
 ##Update installed Inbox Store Apps##
 foreach ($App in (Get-AppxProvisionedPackage -Online)) {
