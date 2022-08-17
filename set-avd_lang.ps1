@@ -1,7 +1,10 @@
 # Set ISO URL`s
-$ISO_oemmulti = "https://software-download.microsoft.com/download/pr/19041.1.191206-1406.vb_release_CLIENTLANGPACKDVD_OEM_MULTI.iso"
-$ISO_fod = "https://software-download.microsoft.com/download/pr/19041.1.191206-1406.vb_release_amd64fre_FOD-PACKAGES_OEM_PT1_amd64fre_MULTI.iso"
-$ISO_inbox = "https://software-download.microsoft.com/download/sg/19041.928.210407-2138.vb_release_svc_prod1_amd64fre_InboxApps.iso"
+
+$isos = @(
+    "https://software-download.microsoft.com/download/pr/19041.1.191206-1406.vb_release_CLIENTLANGPACKDVD_OEM_MULTI.iso",
+    "https://software-download.microsoft.com/download/pr/19041.1.191206-1406.vb_release_amd64fre_FOD-PACKAGES_OEM_PT1_amd64fre_MULTI.iso",
+    "https://software-download.microsoft.com/download/sg/19041.928.210407-2138.vb_release_svc_prod1_amd64fre_InboxApps.iso"
+)
 
 # Set Download Path
 [string]$down_path = "C:\temp\"
@@ -11,20 +14,47 @@ if (!Test-Path $down_path) {
     New-Item -Path $down_path -ItemType Directory -Force
 }
 
-########################################################
-## Add Languages to running Windows Image for Capture ##
-########################################################
+function Get-ISO {
+    [CmdletBinding()]
+    param (
+        [string]$isourl,
+        [string]$down_path
+    )
+    
+    begin {
+        $down_path = "$down_path$(($isourl -split "/")[(($isourl -split "/").length - 1)])"
+    }
+    
+    process {
+        $file = (New-Object System.Net.WebClient).DownloadFile($isourl, $down_path)
+    }
+    
+    end {
+        if (!$Error) {
+            Write-Host "$file downloaded to $down_path" -ForegroundColor Green
+        }
+    }
+}
 
 #Download 
-$WebClient = New-Object System.Net.WebClient
-$WebClient.DownloadFile($ISO_oemmulti, "$down_path + $(($ISO_oemmulti -split "/")[(($ISO_oemmulti -split "/").length - 1)])")
-$WebClient.DownloadFile($ISO_fod, "$down_path + $(($ISO_fod -split "/")[(($ISO_fod -split "/").length - 1)])")
-$WebClient.DownloadFile($ISO_inbox, "$down_path + $(($ISO_inbox -split "/")[(($ISO_inbox -split "/").length - 1)])")
+foreach ($i in $isos) {
+    try {
+        Get-ISO -isourl $i -down_path $down_path
+    }
+    catch {
+        { 1:<#Do this if a terminating exception happens#> }
+    }
+    
+}
 
 ##Mount ISO´s##
 $drives = foreach ($item in Get-ChildItem -Path $down_path -Filter "*.iso") {
     Mount-DiskImage -ImagePath $item.FullName
 }
+
+########################################################
+## Add Languages to running Windows Image for Capture ##
+########################################################
 
 $vol_LPLIP = (($drives | Get-Volume) | Where-Object { $_.FileSystemLabel -match "LPLIP" }).DriveLetter
 $vol_FOD = (($drives | Get-Volume) | Where-Object { $_.FileSystemLabel -match "FOD" }).DriveLetter
